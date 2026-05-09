@@ -69,8 +69,8 @@ p  { color:var(--text-secondary); font-size:0.9rem; }
 @keyframes fadeIn  { from{opacity:0;transform:translateY(6px)}  to{opacity:1;transform:translateY(0)} }
 @keyframes slideUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
 
-/* ── App Shell ── */
-.app-shell { display:grid; grid-template-columns:var(--sidebar-w) 1fr; min-height:100vh; }
+/* ── App Shell — block layout (sidebar is position:fixed, not a grid item) ── */
+.app-shell { display:block; min-height:100vh; }
 
 /* ── Sidebar ── */
 .sidebar {
@@ -378,7 +378,6 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
   .sidebar.open { transform: translateX(0); }
 
   /* Main fills full width */
-  .app-shell { grid-template-columns: 1fr; }
   .main-shell { margin-left: 0; }
 
   /* Panels */
