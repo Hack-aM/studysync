@@ -1,6 +1,8 @@
 // ══ FIREBASE IMPORTS (CDN) ══════════════════════════════════════════════
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut as fbOut }
+import { getAuth, onAuthStateChanged,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  updateProfile as fbUpdateProfile, signOut as fbOut }
   from "https://www.gstatic.com/firebasejs/11.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection,
   query, orderBy, limit, onSnapshot, getDocs, increment, runTransaction,
@@ -26,7 +28,6 @@ const fbApp = initializeApp(firebaseConfig);
 const auth  = getAuth(fbApp);
 const db    = getFirestore(fbApp);
 const rtdb  = getDatabase(fbApp);
-const gp    = new GoogleAuthProvider();
 
 // ══ STATE ════════════════════════════════════════════════════════════════
 let user = null, profile = null;
@@ -66,11 +67,12 @@ function showPage(page) {
 }
 
 // ══ FIREBASE DATA ════════════════════════════════════════════════════════
-async function ensureProfile(u) {
+async function ensureProfile(u, displayName) {
   const r = doc(db,"users",u.uid), snap = await getDoc(r);
   if (!snap.exists()) {
-    const p = { id:u.uid, email:u.email||"", fullName:u.displayName||"StudySync User",
-      avatarUrl:u.photoURL||"", university:"", bio:"", studyInterests:[],
+    const name = displayName || u.displayName || u.email?.split("@")[0] || "Student";
+    const p = { id:u.uid, email:u.email||"safe", fullName:name,
+      avatarUrl:"", university:"", bio:"", studyInterests:[],
       streakDays:0, totalFocusMinutes:0, dailyGoalMinutes:120, createdAt:Date.now(), updatedAt:Date.now() };
     await setDoc(r, p);
     await addDoc(collection(db,"users",u.uid,"notifications"),{
@@ -194,7 +196,6 @@ document.addEventListener("click", async e=>{
   const t=e.target.closest("[data-page],[data-action]"); if(!t) return;
   if(t.dataset.page){showPage(t.dataset.page);return;}
   try {
-    if(t.dataset.action==="sign-in") await signInWithPopup(auth,gp);
     if(t.dataset.action==="sign-out"){stopRoom?.();stopPresence?.();stopThread?.();await fbOut(auth);user=null;profile=null;groups=[];hide("app-shell");show("auth-screen");return;}
     if(t.dataset.action==="open-room"){selGroup=t.dataset.gid;showPage("room");renderRoom();}
     if(t.dataset.action==="join-group"){
@@ -290,3 +291,108 @@ onAuthStateChanged(auth, async u=>{
     showPage(["dashboard","explore","room","messages","profile","settings"].includes(pg)?pg:"dashboard");
   }catch(ex){hide("boot-screen");show("auth-screen");showErr(ex.message);}
 });
+
+// ══ AUTH FORMS — Sign In / Sign Up ═══════════════════════════════════════
+function showAuthError(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove("hidden");
+}
+function clearAuthError(id) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = ""; el.classList.add("hidden"); }
+}
+
+// Toggle between sign-in and sign-up
+document.getElementById("go-signup")?.addEventListener("click", () => {
+  document.getElementById("form-signin").classList.add("hidden");
+  document.getElementById("form-signup").classList.remove("hidden");
+  clearAuthError("si-error");
+});
+document.getElementById("go-signin")?.addEventListener("click", () => {
+  document.getElementById("form-signup").classList.add("hidden");
+  document.getElementById("form-signin").classList.remove("hidden");
+  clearAuthError("su-error");
+});
+
+// Sign In
+document.getElementById("form-signin")?.addEventListener("submit", async e => {
+  e.preventDefault();
+  clearAuthError("si-error");
+  const email    = document.getElementById("si-email").value.trim();
+  const password = document.getElementById("si-password").value;
+  const btn = e.target.querySelector("button[type=submit]");
+  btn.textContent = "Signing in…"; btn.disabled = true;
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    // onAuthStateChanged fires → app boots
+  } catch (err) {
+    const msg = err.code === "auth/invalid-credential" || err.code === "auth/wrong-password"
+      ? "Wrong email or password." : err.code === "auth/user-not-found"
+      ? "No account with that email." : err.code === "auth/invalid-email"
+      ? "That doesn't look like an email." : err.message;
+    showAuthError("si-error", msg);
+    btn.textContent = "Sign in"; btn.disabled = false;
+  }
+});
+
+// Sign Up
+document.getElementById("form-signup")?.addEventListener("submit", async e => {
+  e.preventDefault();
+  clearAuthError("su-error");
+  const fullName = document.getElementById("su-name").value.trim();
+  const email    = document.getElementById("su-email").value.trim();
+  const password = document.getElementById("su-password").value;
+  const confirm  = document.getElementById("su-confirm").value;
+  if (password !== confirm) { showAuthError("su-error", "Passwords don't match."); return; }
+  if (password.length < 6)  { showAuthError("su-error", "Password must be at least 6 characters."); return; }
+  const btn = e.target.querySelector("button[type=submit]");
+  btn.textContent = "Creating account…"; btn.disabled = true;
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await fbUpdateProfile(cred.user, { displayName: fullName });
+    // pass name explicitly since displayName may not propagate instantly
+    profile = await ensureProfile(cred.user, fullName);
+    // onAuthStateChanged will fire and boot the app
+  } catch (err) {
+    const msg = err.code === "auth/email-already-in-use"
+      ? "An account already exists with that email." : err.code === "auth/invalid-email"
+      ? "That doesn't look like a valid email." : err.message;
+    showAuthError("su-error", msg);
+    btn.textContent = "Create account"; btn.disabled = false;
+  }
+});
+
+// ══ MOBILE SIDEBAR DRAWER ════════════════════════════════════════════════
+(function() {
+  const btn      = document.getElementById("btn-hamburger");
+  const sidebar  = document.querySelector(".sidebar");
+  const overlay  = document.getElementById("sidebar-overlay");
+  if (!btn || !sidebar) return;
+
+  function openSidebar() {
+    sidebar.classList.add("open");
+    btn.classList.add("open");
+    overlay.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+  function closeSidebar() {
+    sidebar.classList.remove("open");
+    btn.classList.remove("open");
+    overlay.classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+
+  btn.addEventListener("click", () =>
+    sidebar.classList.contains("open") ? closeSidebar() : openSidebar()
+  );
+  overlay.addEventListener("click", closeSidebar);
+
+  // Close drawer on nav link tap (mobile)
+  document.querySelectorAll(".nav-link").forEach(link => {
+    link.addEventListener("click", () => {
+      if (window.innerWidth <= 768) closeSidebar();
+    });
+  });
+})();
