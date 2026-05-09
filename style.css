@@ -109,9 +109,11 @@ p  { color:var(--text-secondary); font-size:0.9rem; }
 .topbar {
   height:64px; background:rgba(13,11,30,0.85); backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border);
-  display:flex; align-items:center; justify-content:space-between;
-  padding:0 2rem; position:sticky; top:0; z-index:50;
+  display:flex; align-items:center; justify-content:flex-end;
+  padding:0 2rem; position:sticky; top:0; z-index:50; gap:1rem;
 }
+/* topbar-left hidden on desktop, shown on mobile via media query */
+.topbar-left { display:none; align-items:center; gap:0.75rem; margin-right:auto; }
 .topbar-user { display:flex; align-items:center; gap:0.75rem; }
 .topbar-info strong { font-size:0.875rem; display:block; }
 .topbar-info p { font-size:0.75rem; color:var(--text-muted); }
@@ -261,25 +263,11 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
 
 /* ── Auth Screen ── */
 .auth-screen {
-  min-height:100vh; display:flex; align-items:center; justify-content:center;
-  background:radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.2) 0%, transparent 60%), var(--bg-base);
-  padding:2rem;
+  min-height:100vh;
+  display:flex;
+  align-items:stretch;
+  background:var(--bg-base);
 }
-.hero-card {
-  background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-xl);
-  padding:3rem; max-width:540px; width:100%; text-align:center;
-  box-shadow:var(--shadow-lg),0 0 80px rgba(139,92,246,0.1); animation:slideUp 0.5s ease;
-}
-.hero-card .eyebrow { margin-bottom:1rem; }
-.hero-card h1 {
-  font-size:2.5rem; margin-bottom:1rem;
-  background:linear-gradient(135deg,var(--text-primary) 40%,var(--accent));
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-}
-.hero-copy { color:var(--text-secondary); margin-bottom:2rem; font-size:0.95rem; }
-.hero-feats { display:flex; justify-content:center; gap:1.5rem; margin-bottom:2rem; flex-wrap:wrap; }
-.feat { font-size:0.8rem; color:var(--text-muted); display:flex; align-items:center; gap:0.4rem; }
-.hero-card .btn-primary { width:100%; padding:1rem; font-size:1rem; border-radius:var(--r-lg); }
 
 /* ── Page transitions ── */
 .page { display:block; animation: pageIn 0.22s ease; }
@@ -366,7 +354,9 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
 @media (max-width: 768px) {
   :root { --sidebar-w: 260px; }
 
-  /* Show hamburger, hide desktop topbar user info text */
+  /* Show hamburger + brand in topbar */
+  .topbar { justify-content: space-between; padding: 0 1rem; }
+  .topbar-left { display: flex; }
   .hamburger { display: flex; }
   .topbar-brand { display: flex; }
   .topbar-info { display: none; }
@@ -383,10 +373,6 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
   /* Main takes full width */
   .app-shell { grid-template-columns: 1fr; }
   .main-shell { margin-left: 0; }
-
-  /* Topbar */
-  .topbar { padding: 0 1rem; }
-  .topbar-left { gap: 0.5rem; }
 
   /* Panel */
   .panel { padding: 1rem; }
@@ -584,4 +570,77 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
   .auth-split { grid-template-columns: 1fr; }
   .auth-brand { display: none; }
   .auth-form-wrap { padding: 2rem 1.5rem; min-height: 100vh; }
+}
+
+/* ── Dashboard cards min-height ── */
+.dashboard-card { min-height: 280px; }
+
+/* ── Messages left column ── */
+.messages-left { display: flex; flex-direction: column; gap: 0; }
+
+/* ── Profile info section ── */
+.profile-info { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+.profile-avatar-wrap { display: flex; align-items: center; gap: 1rem; }
+.avatar-xl {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; font-weight: 700; color: #fff; flex-shrink: 0;
+  border: 3px solid rgba(139,92,246,0.3);
+}
+
+/* ── Input with unit label ── */
+.input-unit { position: relative; display: flex; align-items: center; }
+.input-unit input { padding-right: 3rem; }
+.unit-label {
+  position: absolute; right: 1rem;
+  font-size: 0.8rem; color: var(--text-muted); pointer-events: none;
+}
+
+/* ── Panel centering ── */
+.panel { padding: 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+/* ── Toast notification ── */
+.toast {
+  position: fixed; bottom: 2rem; right: 2rem; z-index: 999;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 0.875rem 1.25rem;
+  display: flex; align-items: center; gap: 0.75rem;
+  box-shadow: var(--shadow-lg); animation: slideUp 0.3s ease;
+  max-width: 320px; font-size: 0.875rem;
+}
+.toast.success { border-color: rgba(16,185,129,0.4); }
+.toast.success .toast-icon { color: var(--success); font-size: 1.1rem; }
+.toast.error { border-color: rgba(239,68,68,0.4); }
+.toast.error .toast-icon { color: var(--error); font-size: 1.1rem; }
+.toast-body strong { display: block; font-size: 0.8rem; margin-bottom: 0.1rem; }
+.toast-body p { font-size: 0.75rem; color: var(--text-muted); }
+.toast-out { animation: toastOut 0.25s ease forwards; }
+@keyframes toastOut { to { opacity:0; transform: translateY(8px); } }
+
+/* ── Button loading state ── */
+.btn-loading { opacity: 0.7; cursor: not-allowed; position: relative; }
+.btn-loading::after {
+  content: '';
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  position: absolute; right: 14px; top: 50%; margin-top: -7px;
+}
+
+/* ── Who's online max height ── */
+#status-board { max-height: 280px; overflow-y: auto; }
+
+/* ── Mobile responsive additions ── */
+@media (max-width: 768px) {
+  .panel { padding: 1rem; }
+  .profile-info { padding: 1rem; }
+  .toast { bottom: 1rem; right: 1rem; left: 1rem; max-width: none; }
+  .dashboard-card { min-height: 200px; }
+}
+@media (max-width: 480px) {
+  .panel { padding: 0.75rem; }
+  .avatar-xl { width: 56px; height: 56px; font-size: 1.1rem; }
 }

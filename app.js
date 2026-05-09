@@ -396,3 +396,117 @@ document.getElementById("form-signup")?.addEventListener("submit", async e => {
     });
   });
 })();
+
+// ══ TOAST SYSTEM ═════════════════════════════════════════════════════════
+function toast(title, msg, type = "success") {
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.innerHTML = `
+    <span class="toast-icon">${type === "success" ? "✓" : "✕"}</span>
+    <div class="toast-body"><strong>${title}</strong>${msg ? `<p>${msg}</p>` : ""}</div>`;
+  document.body.appendChild(el);
+  setTimeout(() => {
+    el.classList.add("toast-out");
+    setTimeout(() => el.remove(), 280);
+  }, 3000);
+}
+
+// ══ BUTTON LOADING HELPERS ═══════════════════════════════════════════════
+function btnLoad(id, text = "Saving…") {
+  const b = document.getElementById(id);
+  if (!b) return;
+  b.dataset.origText = b.textContent;
+  b.textContent = text;
+  b.disabled = true;
+  b.classList.add("btn-loading");
+}
+function btnReset(id) {
+  const b = document.getElementById(id);
+  if (!b) return;
+  b.textContent = b.dataset.origText || b.textContent;
+  b.disabled = false;
+  b.classList.remove("btn-loading");
+}
+
+// ══ PATCH FORM SUBMISSIONS WITH LOADING + TOAST ═══════════════════════════
+// Override the existing submit handler by patching specific forms after load
+document.addEventListener("DOMContentLoaded", () => {}, { once: true });
+
+// Intercept form submits to add loading/toast (runs after existing handler)
+document.addEventListener("submit", async e => {
+  const f = e.target;
+
+  // Create room
+  if (f.id === "form-create-group") {
+    btnLoad("btn-create-room", "Creating…");
+    // wait a tick so main handler runs first
+    setTimeout(() => {
+      // if still on explore page (success navigates away), reset
+      if (document.getElementById("page-explore")?.classList.contains("hidden")) {
+        toast("Room created!", "You're now the owner.");
+      } else {
+        btnReset("btn-create-room");
+      }
+    }, 2000);
+  }
+
+  // Save profile
+  if (f.id === "form-profile") {
+    btnLoad("btn-save-profile", "Saving…");
+    setTimeout(() => {
+      btnReset("btn-save-profile");
+      toast("Profile saved", "Your changes are live.");
+    }, 1500);
+  }
+
+  // Save settings
+  if (f.id === "form-settings") {
+    btnLoad("btn-save-settings", "Saving…");
+    setTimeout(() => {
+      btnReset("btn-save-settings");
+      toast("Settings saved");
+    }, 1000);
+  }
+
+  // Start DM
+  if (f.id === "form-start-dm") {
+    btnLoad("btn-start-dm", "Opening…");
+    setTimeout(() => btnReset("btn-start-dm"), 3000);
+  }
+}, true); // capture phase so it runs before the existing handler
+
+// ══ ROOM SELECTOR VISIBILITY ══════════════════════════════════════════════
+// Show the room selector only when groups exist
+const _origRenderRooms = window.renderRooms;
+function patchRoomSelector() {
+  const sel = document.getElementById("room-selector");
+  if (!sel) return;
+  // MutationObserver to watch when options are added
+  const obs = new MutationObserver(() => {
+    sel.classList.toggle("hidden", sel.options.length === 0);
+  });
+  obs.observe(sel, { childList: true });
+}
+patchRoomSelector();
+
+// ══ DM COMPOSER SHOW/HIDE ════════════════════════════════════════════════
+// Show DM composer when a thread is selected (patched into renderDMs)
+const dmForm = document.getElementById("form-dm");
+function showDMComposer(show) {
+  if (dmForm) dmForm.classList.toggle("hidden", !show);
+}
+// Called by app after selThread is set — we watch for dm-partner-name changes
+const dmPartnerEl = document.getElementById("dm-partner-name");
+if (dmPartnerEl) {
+  new MutationObserver(() => {
+    const hasThread = dmPartnerEl.textContent !== "Pick a conversation";
+    showDMComposer(hasThread);
+  }).observe(dmPartnerEl, { childList: true, characterData: true, subtree: true });
+}
+
+// ══ PRESENCE COUNT INITIAL STATE ══════════════════════════════════════════
+// Start at — instead of 0
+const presenceCountEl = document.getElementById("presence-count");
+if (presenceCountEl && presenceCountEl.textContent === "0") {
+  presenceCountEl.textContent = "—";
+}
