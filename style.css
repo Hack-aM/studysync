@@ -46,6 +46,8 @@ body {
 
 h1 { font-family:'Space Grotesk',var(--font); font-size:2.25rem; font-weight:700; letter-spacing:-0.02em; line-height:1.2; }
 h2 { font-family:'Space Grotesk',var(--font); font-size:1.5rem; font-weight:700; letter-spacing:-0.01em; }
+/* BUG-21 FIX: panel h1 styled to h2 visual size (semantically promoted from h2) */
+.panel-heading h1 { font-family:'Space Grotesk',var(--font); font-size:1.5rem; font-weight:700; letter-spacing:-0.01em; }
 h3 { font-size:1rem; font-weight:600; }
 p  { color:var(--text-secondary); font-size:0.9rem; }
 .eyebrow { font-size:0.7rem; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); }
@@ -129,7 +131,8 @@ p  { color:var(--text-secondary); font-size:0.9rem; }
 
 /* ── Grids ── */
 .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
-.content-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; align-items:start; }
+/* BUG-13 FIX: removed duplicate align-items:start here; the global rule below sets stretch */
+.content-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
 .room-grid { display:grid; grid-template-columns:260px 1fr 240px; gap:1rem; align-items:start; }
 
 /* ── Stat Card ── */
@@ -230,6 +233,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
   font-size:0.75rem; font-weight:700; color:#fff; flex-shrink:0;
 }
 .avatar.lg, .avatar-fallback.lg { width:48px; height:48px; font-size:1rem; }
+/* BUG-14 FIX: removed duplicate .user-row below (line ~317) — keeping this one */
 .user-row { display:flex; align-items:center; gap:0.75rem; }
 
 /* ── Messages ── */
@@ -263,6 +267,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .typing-hint { font-size:0.72rem; color:var(--text-muted); padding:0 1.5rem 0.5rem; font-style:italic; min-height:1rem; }
 
 /* ── Auth Screen ── */
+/* BUG-12 FIX: single combined .auth-screen with gradient (removed duplicate at line ~469) */
 .auth-screen {
   min-height:100vh;
   display:flex;
@@ -314,7 +319,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
 
 /* ── Utilities ── */
 .hidden { display:none !important; }
-.user-row { display:flex; align-items:center; gap:.75rem; }
+/* BUG-14 FIX: duplicate .user-row removed — defined once above */
 .notif-item { display:flex; gap:.75rem; padding:.75rem 1rem; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--r-md); animation:fadeIn .3s ease; }
 .notif-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0; margin-top:5px; }
 .notif-body strong { font-size:.8rem; display:block; margin-bottom:.25rem; }
@@ -358,7 +363,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
   .room-grid > .tall  { order: 1; }
 }
 
-/* ── 768px — Mobile: sidebar becomes drawer ── */
+/* BUG-15 FIX: all @media (max-width:768px) rules consolidated into one block */
 @media (max-width: 768px) {
   :root { --sidebar-w: 260px; }
 
@@ -403,7 +408,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
   .card-header  { padding: 0.875rem 1rem; }
   .stack-list   { padding: 0.75rem; }
   .list-card    { padding: 0.75rem; }
-  .dashboard-card { min-height: 220px; }
+  .dashboard-card { min-height: 200px; }
 
   /* Room selector */
   .room-select  { max-width: 100%; width: 100%; }
@@ -411,7 +416,16 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
   /* Auth */
   .auth-split      { grid-template-columns: 1fr; }
   .auth-brand      { display: none; }
-  .auth-form-wrap  { padding: 2.5rem 1.5rem; min-height: 100vh; align-items: flex-start; }
+  .auth-form-wrap  { padding: 2rem 1.5rem; min-height: 100vh; align-items: flex-start; justify-content: flex-start; padding-top: 2rem; }
+
+  /* Mobile auth brand */
+  .auth-mobile-brand { display: flex; }
+
+  /* Toast full-width */
+  .toast { bottom: 1rem; right: 1rem; left: 1rem; max-width: none; }
+
+  /* Profile */
+  .profile-info { padding: 1rem; }
 }
 
 /* ── 480px — Small phones ── */
@@ -466,12 +480,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
 
 
 /* ── Auth Split Screen ─────────────────────────────────── */
-.auth-screen {
-  min-height: 100vh;
-  display: flex;
-  align-items: stretch;
-  background: var(--bg-base);
-}
+/* BUG-12 FIX: duplicate .auth-screen removed — defined with gradient above */
 .auth-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -564,11 +573,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
   padding: 0.5rem 0.75rem;
 }
 
-@media(max-width: 768px) {
-  .auth-split { grid-template-columns: 1fr; }
-  .auth-brand { display: none; }
-  .auth-form-wrap { padding: 2rem 1.5rem; min-height: 100vh; }
-}
+/* BUG-15 FIX: auth 768px rules merged into primary block above */
 
 /* ── Dashboard cards min-height ── */
 .dashboard-card { min-height: 280px; }
@@ -631,12 +636,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
 #status-board { max-height: 280px; overflow-y: auto; }
 
 /* ── Mobile responsive additions ── */
-@media (max-width: 768px) {
-  .panel { padding: 1rem; }
-  .profile-info { padding: 1rem; }
-  .toast { bottom: 1rem; right: 1rem; left: 1rem; max-width: none; }
-  .dashboard-card { min-height: 200px; }
-}
+/* BUG-15 FIX: mobile additions merged into primary 768px block above */
 @media (max-width: 480px) {
   .panel { padding: 0.75rem; }
   .avatar-xl { width: 56px; height: 56px; font-size: 1.1rem; }
@@ -658,7 +658,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
 #page-explore .content-grid { align-items: stretch; }
 #page-explore .panel-card   { min-height: 320px; }
 
-/* ── content-grid default back to stretch ── */
+/* BUG-13 FIX: single global stretch rule for content-grid */
 .content-grid { align-items: stretch; }
 
 /* ── Mobile auth branding (M2) ── */
@@ -693,10 +693,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .btn-send-flash { animation: sendFlash 0.4s ease; }
 
 /* ── Show mobile auth brand on mobile ── */
-@media (max-width: 768px) {
-  .auth-mobile-brand { display: flex; }
-  .auth-form-wrap { justify-content: flex-start; padding-top: 2rem; }
-}
+/* BUG-15 FIX: auth-mobile-brand + auth-form-wrap rules merged into primary 768px block above */
 
 /* ══ Custom SVG Icon System ═══════════════════════════════════════════════ */
 .ic {
@@ -730,25 +727,25 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
 /* Card header icons */
 .card-header h3 .ic { opacity: 0.6; }
 
-/* ══ SVG Icon Size Overrides (fix large defaults) ══════════════════════ */
+/* BUG-18 FIX: removed !important — attribute width/height on each <svg> already sets size;
+   specificity via class is sufficient and avoids !important escalation */
 svg.ic { overflow: visible; }
-/* Force sizes — SVG ignores CSS width/height if viewBox not present */
-svg.ic-sm  { width: 15px !important; height: 15px !important; flex-shrink: 0; }
-svg.ic-nav { width: 17px !important; height: 17px !important; flex-shrink: 0; }
-svg.ic-md  { width: 20px !important; height: 20px !important; flex-shrink: 0; }
-svg.ic-lg  { width: 24px !important; height: 24px !important; flex-shrink: 0; }
-svg.ic-xl  { width: 28px !important; height: 28px !important; flex-shrink: 0; }
+svg.ic-sm  { width: 15px; height: 15px; flex-shrink: 0; }
+svg.ic-nav { width: 17px; height: 17px; flex-shrink: 0; }
+svg.ic-md  { width: 20px; height: 20px; flex-shrink: 0; }
+svg.ic-lg  { width: 24px; height: 24px; flex-shrink: 0; }
+svg.ic-xl  { width: 28px; height: 28px; flex-shrink: 0; }
 
 /* Boot screen logo: bigger */
-.boot-icon svg.ic-xl  { width: 44px !important; height: 44px !important; }
+.boot-icon svg.ic-xl  { width: 44px; height: 44px; }
 /* Auth brand logo */
-.auth-brand-logo svg.ic-xl { width: 36px !important; height: 36px !important; }
+.auth-brand-logo svg.ic-xl { width: 36px; height: 36px; }
 /* Mobile auth brand */
-.auth-mobile-brand svg.ic-xl { width: 32px !important; height: 32px !important; }
+.auth-mobile-brand svg.ic-xl { width: 32px; height: 32px; }
 /* Sidebar logo */
-.sidebar-logo-icon svg.ic-xl { width: 26px !important; height: 26px !important; }
+.sidebar-logo-icon svg.ic-xl { width: 26px; height: 26px; }
 /* Topbar brand */
-.topbar-brand svg.ic-xl { width: 22px !important; height: 22px !important; }
+.topbar-brand svg.ic-xl { width: 22px; height: 22px; }
 
 /* Auth feats: icons stay small inside flex list */
 .auth-feats li { display: flex; align-items: center; gap: 0.75rem; }
@@ -793,7 +790,8 @@ svg.ic-xl  { width: 28px !important; height: 28px !important; flex-shrink: 0; }
 .pomo-progress {
   fill: none; stroke: var(--accent); stroke-width: 8;
   stroke-linecap: round;
-  transition: stroke-dashoffset 1s linear, stroke 0.4s ease;
+  /* BUG-20 FIX: 0.95s avoids the visible 1s lag behind the JS countdown tick */
+  transition: stroke-dashoffset 0.95s linear, stroke 0.4s ease;
   filter: drop-shadow(0 0 6px rgba(139,92,246,0.5));
 }
 .pomo-progress.break { stroke: var(--success); filter: drop-shadow(0 0 6px rgba(16,185,129,0.5)); }

@@ -88,7 +88,7 @@
           <label>Password</label>
           <input type="password" name="password" id="si-password" placeholder="Your password" required autocomplete="current-password"/>
         </div>
-        <p class="auth-error hidden" id="si-error"></p>
+        <p class="auth-error hidden" id="si-error" role="alert" aria-live="assertive"></p>
         <button class="btn-primary auth-submit" type="submit">Sign in</button>
         <p class="auth-switch">Don't have an account? <button type="button" class="link-btn" id="go-signup">Create one</button></p>
       </form>
@@ -113,7 +113,7 @@
           <label>Confirm password</label>
           <input type="password" name="confirm" id="su-confirm" placeholder="Same again" required autocomplete="new-password"/>
         </div>
-        <p class="auth-error hidden" id="su-error"></p>
+        <p class="auth-error hidden" id="su-error" role="alert" aria-live="assertive"></p>
         <button class="btn-primary auth-submit" type="submit">Create account</button>
         <p class="auth-switch">Already have an account? <button type="button" class="link-btn" id="go-signin">Sign in</button></p>
       </form>
@@ -138,12 +138,12 @@
     </div>
 
     <nav class="nav-stack">
-      <button class="nav-link active" data-page="dashboard"><svg class="ic ic-nav" width="17" height="17"><use href="#ic-dashboard"/></svg> Dashboard</button>
-      <button class="nav-link" data-page="explore"><svg class="ic ic-nav" width="17" height="17"><use href="#ic-explore"/></svg> Explore</button>
-      <button class="nav-link" data-page="room"><svg class="ic ic-nav" width="17" height="17"><use href="#ic-room"/></svg> Study Room</button>
-      <button class="nav-link" data-page="messages"><svg class="ic ic-nav" width="17" height="17"><use href="#ic-messages"/></svg> Messages</button>
-      <button class="nav-link" data-page="profile"><svg class="ic ic-nav" width="17" height="17"><use href="#ic-profile"/></svg> Profile</button>
-      <button class="nav-link" data-page="settings"><svg class="ic ic-nav" width="17" height="17"><use href="#ic-settings"/></svg> Settings</button>
+      <button class="nav-link active" data-page="dashboard" aria-current="page"><svg class="ic ic-nav" width="17" height="17"><use href="#ic-dashboard"/></svg> Dashboard</button>
+      <button class="nav-link" data-page="explore" aria-current="false"><svg class="ic ic-nav" width="17" height="17"><use href="#ic-explore"/></svg> Explore</button>
+      <button class="nav-link" data-page="room" aria-current="false"><svg class="ic ic-nav" width="17" height="17"><use href="#ic-room"/></svg> Study Room</button>
+      <button class="nav-link" data-page="messages" aria-current="false"><svg class="ic ic-nav" width="17" height="17"><use href="#ic-messages"/></svg> Messages</button>
+      <button class="nav-link" data-page="profile" aria-current="false"><svg class="ic ic-nav" width="17" height="17"><use href="#ic-profile"/></svg> Profile</button>
+      <button class="nav-link" data-page="settings" aria-current="false"><svg class="ic ic-nav" width="17" height="17"><use href="#ic-settings"/></svg> Settings</button>
     </nav>
 
     <div class="sidebar-footer">
@@ -178,7 +178,7 @@
           <p id="topbar-email">—</p>
         </div>
       </div>
-      <p class="error-pill hidden" id="error-pill"></p>
+      <p class="error-pill hidden" id="error-pill" role="alert" aria-live="assertive"></p>
     </header>
     <!-- Sidebar overlay for mobile -->
     <div class="sidebar-overlay hidden" id="sidebar-overlay"></div>
@@ -189,7 +189,8 @@
       <div class="panel-heading">
         <div>
           <p class="eyebrow">Dashboard</p>
-          <h2>Hey, <span id="dash-firstname">there</span></h2>
+          <!-- BUG-21 FIX: use h1 for the main app heading -->
+          <h1>Hey, <span id="dash-firstname">there</span></h1>
           <p class="section-copy">Here's where things stand today.</p>
         </div>
       </div>
@@ -284,20 +285,20 @@
           <div class="card-header"><h3>Create a room</h3></div>
           <form class="form" id="form-create-group">
             <div class="field-group">
-              <label>Room name</label>
-              <input name="name" placeholder="e.g. Finals week grind" required/>
+              <label for="create-room-name">Room name</label>
+              <input name="name" id="create-room-name" placeholder="e.g. Finals week grind" required/>
             </div>
             <div class="field-group">
-              <label>Subject</label>
-              <input name="category" placeholder="e.g. CS, Math, Law" required/>
+              <label for="create-room-category">Subject</label>
+              <input name="category" id="create-room-category" placeholder="e.g. CS, Math, Law" required/>
             </div>
             <div class="field-group">
-              <label>What's the vibe?</label>
-              <textarea name="description" placeholder="What are you working on? Who should join?" required></textarea>
+              <label for="create-room-desc">What's the vibe?</label>
+              <textarea name="description" id="create-room-desc" placeholder="What are you working on? Who should join?" required></textarea>
             </div>
             <div class="field-group">
-              <label>Tags <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
-              <input name="tags" placeholder="algo, calculus, mocks"/>
+              <label for="create-room-tags">Tags <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+              <input name="tags" id="create-room-tags" placeholder="algo, calculus, mocks"/>
             </div>
             <label class="toggle">
               <input type="checkbox" name="isPrivate"/>
@@ -333,7 +334,7 @@
           <article class="panel-card">
             <div class="card-header"><h3><svg class="ic ic-sm" width="15" height="15"><use href="#ic-zap"/></svg> My Status</h3></div>
             <form class="form" id="form-status">
-              <input name="statusText" id="status-text" placeholder="e.g. grinding DSA..." value="Around"/>
+              <input name="statusText" id="status-text" placeholder="e.g. grinding DSA..." value="Around" aria-label="Status message"/>
               <label class="toggle">
                 <input type="checkbox" name="focusMode" id="focus-mode"/>
                 <span><svg class="ic ic-sm" width="15" height="15"><use href="#ic-target"/></svg> Focus mode — mute distractions</span>
@@ -363,7 +364,7 @@
           </div>
           <p class="typing-hint" id="typing-hint"></p>
           <form class="composer" id="form-group-msg">
-            <textarea name="body" id="group-msg-input" placeholder="What are you working on?" required></textarea>
+            <textarea name="body" id="group-msg-input" placeholder="What are you working on?" required aria-label="Chat message"></textarea>
             <button class="btn-primary" type="submit">Send</button>
           </form>
         </article>
@@ -414,7 +415,7 @@
             <p class="empty-state">Pick a conversation to start.</p>
           </div>
           <form class="composer hidden" id="form-dm">
-            <textarea name="body" id="dm-msg-input" placeholder="Write something..." required></textarea>
+            <textarea name="body" id="dm-msg-input" placeholder="Write something..." required aria-label="Direct message"></textarea>
             <button class="btn-primary" type="submit">Send</button>
           </form>
         </article>
@@ -541,5 +542,129 @@
 </div><!-- /app-shell -->
 
 <script type="module" src="app.js"></script>
+
+<!-- ═══ POMODORO TIMER — standalone, non-module ═══════════════════════ -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  var C = 314.16; // 2 * π * 50
+  var MODES = { focus: 25, short: 5, long: 15 };
+  var totalSecs = 1500, remaining = 1500;
+  var running = false, interval = null, sessions = 0, mode = "focus";
+
+  try { sessions = parseInt(localStorage.getItem("ss_pomo_sessions") || "0") || 0; } catch(e){}
+
+  var elTime   = document.getElementById("pomo-time");
+  var elLabel  = document.getElementById("pomo-label");
+  var circle   = document.getElementById("pomo-circle");
+  var btnStart = document.getElementById("btn-pomo");
+  var btnReset = document.getElementById("btn-pomo-reset");
+  var elBadge  = document.getElementById("pomo-badge");
+  var elSess   = document.getElementById("pomo-sessions");
+  var tabs     = document.querySelectorAll(".pomo-tab");
+
+  if (!btnStart || !circle) return; // elements not ready
+
+  if (elSess) elSess.textContent = sessions;
+
+  function pad(n) { return n < 10 ? "0"+n : ""+n; }
+
+  function render() {
+    var m = Math.floor(remaining / 60), s = remaining % 60;
+    if (elTime) elTime.textContent = pad(m) + ":" + pad(s);
+    var pct = totalSecs > 0 ? remaining / totalSecs : 0;
+    var offset = C * (1 - pct);
+    circle.setAttribute("stroke-dashoffset", offset.toFixed(2));
+  }
+
+  function badge(text) { if (elBadge) elBadge.textContent = text; }
+
+  function applyMode(m) {
+    mode = m;
+    totalSecs = MODES[m] * 60;
+    remaining  = totalSecs;
+    running    = false;
+    clearInterval(interval);
+    if (btnStart) btnStart.textContent = "Start";
+    var isBreak = m !== "focus";
+    circle.classList.toggle("break", isBreak);
+    circle.classList.remove("running");
+    if (elLabel) elLabel.textContent = m === "focus" ? "Focus" : m === "short" ? "Short break" : "Long break";
+    badge("Ready");
+    render();
+    // Update ring colour
+    circle.setAttribute("stroke", isBreak ? "var(--success, #10b981)" : "var(--accent, #8b5cf6)");
+  }
+
+  function tick() {
+    if (remaining <= 0) {
+      clearInterval(interval);
+      running = false;
+      circle.classList.remove("running");
+      if (btnStart) btnStart.textContent = "Start";
+      if (mode === "focus") {
+        sessions++;
+        try { localStorage.setItem("ss_pomo_sessions", sessions); } catch(e){}
+        if (elSess) elSess.textContent = sessions;
+        badge("Done!");
+      }
+      // Browser notification
+      try {
+        if (Notification && Notification.permission === "granted") {
+          new Notification("StudySync", {
+            body: mode === "focus" ? "Focus session complete! Time for a break." : "Break over — back to work!"
+          });
+        }
+      } catch(e) {}
+      // Auto switch: focus→short break, break→focus
+      var next = mode === "focus" ? "short" : "focus";
+      tabs.forEach(function(t){ t.classList.toggle("active", parseInt(t.dataset.mins) === MODES[next]); });
+      applyMode(next);
+      return;
+    }
+    remaining--;
+    render();
+  }
+
+  function toggle() {
+    if (!running) {
+      running = true;
+      if (btnStart) btnStart.textContent = "Pause";
+      circle.classList.add("running");
+      badge("Running");
+      try { Notification && Notification.requestPermission(); } catch(e){}
+      interval = setInterval(tick, 1000);
+    } else {
+      running = false;
+      clearInterval(interval);
+      if (btnStart) btnStart.textContent = "Resume";
+      circle.classList.remove("running");
+      badge("Paused");
+    }
+  }
+
+  btnStart.addEventListener("click", toggle);
+  if (btnReset) btnReset.addEventListener("click", function(){ applyMode(mode); });
+
+  tabs.forEach(function(tab) {
+    tab.addEventListener("click", function() {
+      if (running) return; // don't switch mid-session
+      tabs.forEach(function(t){ t.classList.remove("active"); });
+      tab.classList.add("active");
+      // BUG-02 FIX: read custom session length saved by Settings form
+      var customFocus = 25;
+      try { customFocus = parseInt(localStorage.getItem("ss_session_length") || "25") || 25; } catch(e){}
+      MODES.focus = customFocus;
+      totalSecs = customFocus * 60; remaining = totalSecs;
+
+      var modeKey = tab.id === "tab-focus" ? "focus" : tab.id === "tab-short" ? "short" : "long";
+      applyMode(modeKey);
+    });
+  });
+
+  // Initial render
+  render();
+});
+</script>
 </body>
 </html>
+

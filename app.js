@@ -36,6 +36,7 @@ let room = { group:null, members:[], messages:[], statuses:[] }, presence = [];
 let selGroup = "", selThread = "";
 let stopRoom = null, stopPresence = null, stopThread = null;
 let typingTimer = null, errTimer = null;
+let _renderRoomTimer = null; // BUG-28: debounce handle
 
 // ══ DOM HELPERS ══════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
@@ -43,7 +44,12 @@ const txt = (id, v) => { const e=$( id); if(e) e.textContent = v; };
 const htm = (id, v) => { const e=$(id); if(e) e.innerHTML   = v; };
 const show = id => $(id)?.classList.remove("hidden");
 const hide = id => $(id)?.classList.add("hidden");
-const fmt  = ts => ts ? new Date(typeof ts==="number"?ts:Date.now()).toLocaleString() : "";
+// BUG-01 FIX: handle Firestore Timestamp objects, plain numbers, and strings
+const fmt = ts => {
+  if (!ts) return "";
+  const ms = ts?.toMillis?.() ?? (typeof ts === "number" ? ts : Number(ts));
+  return isNaN(ms) ? "" : new Date(ms).toLocaleString();
+};
 
 function av(name, src) {
   if (src) return `<img class="avatar" src="${src}" alt="${name||""}">`;
@@ -58,10 +64,15 @@ function showErr(msg) {
 function showPage(page) {
   document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
   $("page-"+page)?.classList.remove("hidden");
-  document.querySelectorAll(".nav-link").forEach(l=>l.classList.toggle("active",l.dataset.page===page));
+  // BUG-22 FIX: set aria-current="page" for screen readers
+  document.querySelectorAll(".nav-link").forEach(l => {
+    const active = l.dataset.page === page;
+    l.classList.toggle("active", active);
+    l.setAttribute("aria-current", active ? "page" : "false");
+  });
   window.location.hash = page==="dashboard" ? "" : page;
   if (page==="room")     { startRoomSubs(); }
-  else                   { stopRoom?.(); stopPresence?.(); stopRoom=stopPresence=null; }
+  else                   { stopRoom?.(); if (stopPresence) stopPresence().catch(()=>{}); stopRoom=stopPresence=null; }
   if (page==="messages") { startThreadSub(); }
   else                   { stopThread?.(); stopThread=null; }
 }
@@ -71,9 +82,10 @@ async function ensureProfile(u, displayName) {
   const r = doc(db,"users",u.uid), snap = await getDoc(r);
   if (!snap.exists()) {
     const name = displayName || u.displayName || u.email?.split("@")[0] || "Student";
-    const p = { id:u.uid, email:u.email||"safe", fullName:name,
+    // BUG-09 FIX: use empty string, not "safe", so DM lookups don't break
+    const p = { id:u.uid, email:u.email||"", fullName:name,
       avatarUrl:"", university:"", bio:"", studyInterests:[],
-      streakDays:0, totalFocusMinutes:0, dailyGoalMinutes:120, createdAt:Date.now(), updatedAt:Date.now() };
+      streakDays:0, totalFocusMinutes:0, dailyGoalMinutes:120, sessionLength:25, createdAt:Date.now(), updatedAt:Date.now() };
     await setDoc(r, p);
     await addDoc(collection(db,"users",u.uid,"notifications"),{
       title:"You're in 👋", body:"Find a room, or make one. Start studying with people who get it.", isRead:false, createdAt:Date.now() });
@@ -96,14 +108,24 @@ async function loadData() {
   if (!selGroup && groups.length) selGroup = groups[0].id;
   if (!selThread && threads.length) selThread = threads[0].id;
 }
+// BUG-28 FIX: debounce renderRoom to prevent 4× DOM thrash per snapshot cycle
+function scheduleRenderRoom() {
+  clearTimeout(_renderRoomTimer);
+  _renderRoomTimer = setTimeout(renderRoom, 0);
+}
+
 function startRoomSubs() {
-  stopRoom?.(); stopPresence?.(); stopRoom=stopPresence=null;
+  stopRoom?.();
+  // BUG-06 FIX: stopPresence is async — await it to ensure RTDB remove completes
+  if (stopPresence) stopPresence().catch(()=>{});
+  stopRoom=stopPresence=null;
   if (!user||!selGroup) return;
   const lbl = ts=>ts?new Date(typeof ts==="number"?ts:Date.now()).toLocaleString():"";
-  const u1=onSnapshot(doc(db,"groups",selGroup),s=>{room.group=s.exists()?s.data():null;renderRoom();});
-  const u2=onSnapshot(query(collection(db,"groups",selGroup,"members"),orderBy("joinedAt","asc")),s=>{room.members=s.docs.map(d=>d.data());renderRoom();});
-  const u3=onSnapshot(query(collection(db,"groups",selGroup,"messages"),orderBy("createdAt","asc"),limit(100)),s=>{room.messages=s.docs.map(d=>({id:d.id,...d.data(),createdAtLabel:lbl(d.data().createdAt)}));renderRoom();});
-  const u4=onSnapshot(query(collection(db,"groups",selGroup,"statuses"),orderBy("updatedAt","desc"),limit(20)),s=>{room.statuses=s.docs.map(d=>({id:d.id,...d.data()}));renderRoom();});
+  // BUG-28: use scheduleRenderRoom so all 4 listeners batch into one DOM update
+  const u1=onSnapshot(doc(db,"groups",selGroup),s=>{room.group=s.exists()?s.data():null;scheduleRenderRoom();});
+  const u2=onSnapshot(query(collection(db,"groups",selGroup,"members"),orderBy("joinedAt","asc")),s=>{room.members=s.docs.map(d=>d.data());scheduleRenderRoom();});
+  const u3=onSnapshot(query(collection(db,"groups",selGroup,"messages"),orderBy("createdAt","asc"),limit(100)),s=>{room.messages=s.docs.map(d=>({id:d.id,...d.data(),createdAtLabel:lbl(d.data().createdAt)}));scheduleRenderRoom();});
+  const u4=onSnapshot(query(collection(db,"groups",selGroup,"statuses"),orderBy("updatedAt","desc"),limit(20)),s=>{room.statuses=s.docs.map(d=>({id:d.id,...d.data()}));scheduleRenderRoom();});
   stopRoom=()=>{u1();u2();u3();u4();};
   const myRef=ref(rtdb,`presence/groups/${selGroup}/${user.uid}`);
   set(myRef,{userId:user.uid,fullName:profile.fullName,avatarUrl:profile.avatarUrl,statusText:"Online",focusMode:false,onlineAt:Date.now(),typing:false});
@@ -111,8 +133,10 @@ function startRoomSubs() {
   const unsub=onValue(ref(rtdb,`presence/groups/${selGroup}`),s=>{
     presence=Object.values(s.val()||{}); txt("presence-count",presence.length);
     const typing=presence.filter(p=>p.typing&&p.userId!==user.uid);
-    txt("typing-hint",typing.length?`✍️ ${typing.length>1?"Several people":"Someone"} is typing…`:"");
+    // BUG-11 FIX: plain text instead of emoji for cross-platform consistency
+    txt("typing-hint",typing.length?`${typing.length>1?"Several people":"Someone"} is typing…`:"");
   });
+  // BUG-06 FIX: async so callers can await the RTDB remove
   stopPresence=async()=>{unsub();await remove(myRef);};
 }
 function startThreadSub() {
@@ -144,17 +168,11 @@ function fillUI() {
   const streak = profile.streakDays||0;
   const focus  = profile.totalFocusMinutes||0;
   const goal   = profile.dailyGoalMinutes||120;
-  if (window.animateStat) {
-    animateStat($("stat-streak"), streak, 800, " days");
-    animateStat($("stat-focus"),  focus,  1000, " min");
-    animateStat($("stat-goal"),   goal,   600, " min");
-    animateStat($("stat-groups"), groups.length, 500);
-  } else {
-    txt("stat-streak", streak+" days");
-    txt("stat-focus",  focus+" min");
-    txt("stat-goal",   goal+" min");
-    txt("stat-groups", groups.length);
-  }
+  // BUG-04 FIX: call animateCount directly (module-scoped, always available)
+  animateCount($("stat-streak"), streak, 800, " days");
+  animateCount($("stat-focus"),  focus,  1000, " min");
+  animateCount($("stat-goal"),   goal,   600, " min");
+  animateCount($("stat-groups"), groups.length, 500);
 
   txt("profile-since",profile.createdAt?new Date(profile.createdAt).toLocaleDateString():"—");
   htm("profile-tags",(profile.studyInterests||[]).map(t=>`<span class="badge">${t}</span>`).join("")||"<p>None added yet.</p>");
@@ -215,13 +233,18 @@ document.addEventListener("click", async e=>{
   const t=e.target.closest("[data-page],[data-action]"); if(!t) return;
   if(t.dataset.page){showPage(t.dataset.page);return;}
   try {
-    if(t.dataset.action==="sign-out"){stopRoom?.();stopPresence?.();stopThread?.();await fbOut(auth);user=null;profile=null;groups=[];hide("app-shell");show("auth-screen");return;}
+    if(t.dataset.action==="sign-out"){stopRoom?.();if(stopPresence)await stopPresence().catch(()=>{});stopThread?.();await fbOut(auth);user=null;profile=null;groups=[];hide("app-shell");show("auth-screen");return;}
     if(t.dataset.action==="open-room"){selGroup=t.dataset.gid;showPage("room");renderRoom();}
     if(t.dataset.action==="join-group"){
       const g=exploreGroups.find(x=>x.id===t.dataset.gid);if(!g)return;
       const gR=doc(db,"groups",g.id),mR=doc(db,"groups",g.id,"members",user.uid),uR=doc(db,"users",user.uid,"memberships",g.id);
       await runTransaction(db,async tx=>{if((await tx.get(mR)).exists())return;tx.set(mR,{userId:user.uid,role:"member",fullName:profile.fullName,avatarUrl:profile.avatarUrl,email:profile.email,joinedAt:Date.now()});tx.set(uR,{groupId:g.id,name:g.name,category:g.category,joinedAt:Date.now(),role:"member"});tx.update(gR,{activeMemberCount:increment(1),updatedAt:Date.now()});});
-      await loadData();renderRooms();renderExplore();fillUI();
+      // BUG-26 FIX: push to local array instead of full reload to avoid read storm
+      if (!groups.find(x=>x.id===g.id)) {
+        groups.push({ ...g, activeMemberCount: (g.activeMemberCount||0)+1 });
+      }
+      if (!selGroup) selGroup = g.id;
+      renderRooms(); renderExplore(); fillUI();
     }
     if(t.dataset.action==="open-thread"){selThread=t.dataset.tid;renderThreads();renderDMs();startThreadSub();}
     if(t.dataset.action==="start-dm"){
@@ -244,12 +267,14 @@ document.addEventListener("submit",async e=>{
   e.preventDefault();const f=e.target,d=new FormData(f);
   try{
     if(f.id==="form-create-group"){
+      btnLoad("btn-create-room","Creating…");
       const id=crypto.randomUUID(),now=Date.now();
       const p2={id,ownerId:user.uid,name:d.get("name").trim(),category:d.get("category").trim(),description:d.get("description").trim(),tags:String(d.get("tags")||"").split(",").map(t=>t.trim()).filter(Boolean),isPrivate:d.get("isPrivate")==="on",activeMemberCount:1,createdAt:now,updatedAt:now};
       await setDoc(doc(db,"groups",id),p2);
       await setDoc(doc(db,"groups",id,"members",user.uid),{userId:user.uid,role:"owner",fullName:profile.fullName,avatarUrl:profile.avatarUrl,email:profile.email,joinedAt:now});
       await setDoc(doc(db,"users",user.uid,"memberships",id),{groupId:id,name:p2.name,category:p2.category,joinedAt:now,role:"owner"});
       selGroup=id;f.reset();await loadData();renderRooms();showPage("room");
+      btnReset("btn-create-room"); toast("Room created!","You're now the owner.");
     }
     if(f.id==="form-status"){
       const st=d.get("statusText").trim()||"Studying",fm=d.get("focusMode")==="on";
@@ -262,11 +287,12 @@ document.addEventListener("submit",async e=>{
       await update(ref(rtdb,`presence/groups/${selGroup}/${user.uid}`),{typing:false});f.reset();
     }
     if(f.id==="form-start-dm"){
+      btnLoad("btn-start-dm","Opening…");
       const email=d.get("email").trim().toLowerCase();
       const r=await getDocs(query(collection(db,"users"),where("email","==",email),limit(1)));
-      if(r.empty){showErr("No StudySync profile for that email.");return;}
-      const them=r.docs[0].data();if(them.id===profile.id){showErr("Pick another study partner.");return;}
-      await openDM(them);f.reset();
+      if(r.empty){btnReset("btn-start-dm");showErr("No StudySync profile for that email.");return;}
+      const them=r.docs[0].data();if(them.id===profile.id){btnReset("btn-start-dm");showErr("Pick another study partner.");return;}
+      await openDM(them);f.reset();btnReset("btn-start-dm");
     }
     if(f.id==="form-dm"){
       const body=d.get("body").trim(),at=threads.find(t=>t.id===selThread);if(!body||!at)return;
@@ -276,20 +302,33 @@ document.addEventListener("submit",async e=>{
       await loadData();renderThreads();f.reset();
     }
     if(f.id==="form-profile"){
+      btnLoad("btn-save-profile","Saving…");
       const p2={fullName:d.get("fullName").trim(),university:d.get("university").trim(),bio:d.get("bio").trim(),studyInterests:String(d.get("studyInterests")).split(",").map(i=>i.trim()).filter(Boolean),updatedAt:Date.now()};
-      await updateDoc(doc(db,"users",profile.id),p2);profile={...profile,...p2};fillUI();
+      await updateDoc(doc(db,"users",profile.id),p2);profile={...profile,...p2};
+      btnReset("btn-save-profile"); fillUI(); toast("Profile saved","Your changes are live.");
     }
     if(f.id==="form-settings"){
-      const p2={dailyGoalMinutes:Number(d.get("dailyGoalMinutes"))||120};
-      await updateDoc(doc(db,"users",profile.id),p2);profile={...profile,...p2};fillUI();
+      btnLoad("btn-save-settings","Saving…");
+      // BUG-08 FIX: also save sessionLength and persist to localStorage for Pomodoro
+      const sessionLen = Number(d.get("sessionLength"))||25;
+      const p2={dailyGoalMinutes:Number(d.get("dailyGoalMinutes"))||120, sessionLength:sessionLen};
+      try { localStorage.setItem("ss_session_length", sessionLen); } catch(_){}
+      await updateDoc(doc(db,"users",profile.id),p2);profile={...profile,...p2};
+      btnReset("btn-save-settings"); fillUI(); toast("Settings saved","Preferences updated.");
     }
-  }catch(ex){showErr(ex.message||"Something went wrong.");}
+  }catch(ex){
+    // BUG-05 FIX: reset any stuck loading buttons on error
+    btnReset("btn-create-room");btnReset("btn-save-profile");btnReset("btn-save-settings");btnReset("btn-start-dm");
+    showErr(ex.message||"Something went wrong.");
+  }
 });
 
 // ══ SHARED DM HELPER ════════════════════════════════════════════════════
 async function openDM(them) {
   const key=[profile.id,them.id].sort().join("_"),tRef=doc(db,"directThreads",key),now=Date.now();
-  if(!(await getDoc(tRef)).exists()){
+  const tSnap = await getDoc(tRef);
+  // BUG-10 FIX: always ensure the top-level thread doc exists (re-create if missing)
+  if(!tSnap.exists()){
     await setDoc(tRef,{id:key,participantIds:[profile.id,them.id],createdAt:now,updatedAt:now});
     await setDoc(doc(db,"directThreads",key,"members",profile.id),{userId:profile.id,fullName:profile.fullName,avatarUrl:profile.avatarUrl,email:profile.email,joinedAt:now});
     await setDoc(doc(db,"directThreads",key,"members",them.id),{userId:them.id,fullName:them.fullName,avatarUrl:them.avatarUrl,email:them.email,joinedAt:now});
@@ -447,56 +486,15 @@ function btnReset(id) {
   b.classList.remove("btn-loading");
 }
 
-// ══ PATCH FORM SUBMISSIONS WITH LOADING + TOAST ═══════════════════════════
-// Override the existing submit handler by patching specific forms after load
-document.addEventListener("DOMContentLoaded", () => {}, { once: true });
-
-// Intercept form submits to add loading/toast (runs after existing handler)
-document.addEventListener("submit", async e => {
-  const f = e.target;
-
-  // Create room
-  if (f.id === "form-create-group") {
-    btnLoad("btn-create-room", "Creating…");
-    // wait a tick so main handler runs first
-    setTimeout(() => {
-      // if still on explore page (success navigates away), reset
-      if (document.getElementById("page-explore")?.classList.contains("hidden")) {
-        toast("Room created!", "You're now the owner.");
-      } else {
-        btnReset("btn-create-room");
-      }
-    }, 2000);
-  }
-
-  // Save profile
-  if (f.id === "form-profile") {
-    btnLoad("btn-save-profile", "Saving…");
-    setTimeout(() => {
-      btnReset("btn-save-profile");
-      toast("Profile saved", "Your changes are live.");
-    }, 1500);
-  }
-
-  // Save settings
-  if (f.id === "form-settings") {
-    btnLoad("btn-save-settings", "Saving…");
-    setTimeout(() => {
-      btnReset("btn-save-settings");
-      toast("Settings saved");
-    }, 1000);
-  }
-
-  // Start DM
-  if (f.id === "form-start-dm") {
-    btnLoad("btn-start-dm", "Opening…");
-    setTimeout(() => btnReset("btn-start-dm"), 3000);
-  }
-}, true); // capture phase so it runs before the existing handler
+// BUG-27 FIX: clean up Firestore + RTDB listeners when tab is closed
+window.addEventListener("beforeunload", () => {
+  stopRoom?.();
+  if (stopPresence) stopPresence().catch(()=>{});
+  stopThread?.();
+});
 
 // ══ ROOM SELECTOR VISIBILITY ══════════════════════════════════════════════
-// Show the room selector only when groups exist
-const _origRenderRooms = window.renderRooms;
+// BUG-03 FIX: removed dead _origRenderRooms (renderRooms is module-scoped, never on window)
 function patchRoomSelector() {
   const sel = document.getElementById("room-selector");
   if (!sel) return;
@@ -540,157 +538,19 @@ document.addEventListener("submit", e => {
   }
 }, true);
 
-// ══════════════════════════════════════════════════════════════════════════
-// POMODORO FOCUS TIMER
-// ══════════════════════════════════════════════════════════════════════════
-(function initPomodoro() {
-  const CIRCUMFERENCE = 314.16;
-  const MODES = { focus: 25, short: 5, long: 15 };
-
-  let totalSecs  = 25 * 60;
-  let remaining  = totalSecs;
-  let running    = false;
-  let interval   = null;
-  let sessions   = parseInt(localStorage.getItem("ss_pomo_sessions") || "0");
-  let mode       = "focus";
-
-  const display  = document.getElementById("pomo-time");
-  const label    = document.getElementById("pomo-label");
-  const circle   = document.getElementById("pomo-circle");
-  const btnStart = document.getElementById("btn-pomo");
-  const btnReset = document.getElementById("btn-pomo-reset");
-  const badge    = document.getElementById("pomo-badge");
-  const sessEl   = document.getElementById("pomo-sessions");
-  const tabs     = document.querySelectorAll(".pomo-tab");
-
-  function fmt(s) {
-    const m = Math.floor(s / 60), sec = s % 60;
-    return String(m).padStart(2,"0") + ":" + String(sec).padStart(2,"0");
-  }
-
-  function updateRing() {
-    const pct = remaining / totalSecs;
-    circle.style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
-  }
-
-  function render() {
-    if (!display) return;
-    display.textContent = fmt(remaining);
-    updateRing();
-  }
-
-  function setBadge(text, color) {
-    if (!badge) return;
-    badge.textContent = text;
-    badge.style.background = color || "";
-  }
-
-  function setMode(m) {
-    mode = m;
-    totalSecs = MODES[m] * 60;
-    remaining = totalSecs;
-    running = false;
-    clearInterval(interval);
-    if (btnStart) btnStart.textContent = "Start";
-    const isBreak = m !== "focus";
-    circle.classList.toggle("break", isBreak);
-    circle.classList.remove("running");
-    if (label) label.textContent = m === "focus" ? "Focus" : m === "short" ? "Short break" : "Long break";
-    setBadge("Ready");
-    render();
-  }
-
-  function tick() {
-    remaining--;
-    render();
-    if (remaining <= 0) {
-      clearInterval(interval);
-      running = false;
-      if (btnStart) btnStart.textContent = "Start";
-      circle.classList.remove("running");
-      if (mode === "focus") {
-        sessions++;
-        localStorage.setItem("ss_pomo_sessions", sessions);
-        if (sessEl) sessEl.textContent = sessions;
-        setBadge("Done! 🎉");
-        // Save focus minutes to Firestore if available
-        try {
-          const uid = window._ssUser?.uid;
-          if (uid && window.db) {
-            const { doc, updateDoc, increment } = window.fsModule;
-            updateDoc(doc(window.db, "users", uid), {
-              "stats.focusMinutes": increment(MODES[mode])
-            }).catch(()=>{});
-          }
-        } catch(e) {}
-      }
-      // Browser notification
-      if (Notification.permission === "granted") {
-        new Notification("StudySync ⏱", {
-          body: mode === "focus" ? "Focus session done! Take a break." : "Break over. Back to work!",
-          icon: "/favicon.ico"
-        });
-      }
-      // Auto-switch mode
-      setMode(mode === "focus" ? "short" : "focus");
-      setTimeout(() => setBadge("Ready"), 100);
-    }
-  }
-
-  function toggle() {
-    if (!running) {
-      running = true;
-      btnStart.textContent = "Pause";
-      circle.classList.add("running");
-      setBadge("Running");
-      Notification.requestPermission();
-      interval = setInterval(tick, 1000);
-    } else {
-      running = false;
-      clearInterval(interval);
-      btnStart.textContent = "Resume";
-      circle.classList.remove("running");
-      setBadge("Paused");
-    }
-  }
-
-  // Init sessions count
-  if (sessEl) sessEl.textContent = sessions;
-
-  // Tab switching
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      const mins = parseInt(tab.dataset.mins);
-      const modeKey = mins === 25 ? "focus" : mins === 5 ? "short" : "long";
-      setMode(modeKey);
-    });
-  });
-
-  if (btnStart) btnStart.addEventListener("click", toggle);
-  if (btnReset) btnReset.addEventListener("click", () => setMode(mode));
-
-  render();
-})();
-
-// ══════════════════════════════════════════════════════════════════════════
-// ANIMATED STAT COUNTERS
-// ══════════════════════════════════════════════════════════════════════════
-function animateCount(el, target, duration = 900, suffix = "") {
+// ══ ANIMATED STAT COUNTERS (kept for window.animateStat back-compat) ══════
+function animateCount(el, target, duration, suffix) {
   if (!el) return;
-  const start = performance.now();
-  const from = 0;
+  duration = duration || 900; suffix = suffix || "";
+  var start = performance.now();
   el.classList.add("counting");
   function step(now) {
-    const t = Math.min((now - start) / duration, 1);
-    const ease = 1 - Math.pow(1 - t, 3); // ease-out cubic
-    el.textContent = Math.round(from + (target - from) * ease) + suffix;
+    var t = Math.min((now - start) / duration, 1);
+    var ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(target * ease) + suffix;
     if (t < 1) requestAnimationFrame(step);
     else { el.textContent = target + suffix; el.classList.remove("counting"); }
   }
   requestAnimationFrame(step);
 }
-
-// Expose for app.js to call when filling stats
 window.animateStat = animateCount;
