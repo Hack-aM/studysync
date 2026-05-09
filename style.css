@@ -697,3 +697,35 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
   .auth-mobile-brand { display: flex; }
   .auth-form-wrap { justify-content: flex-start; padding-top: 2rem; }
 }
+
+/* ══ Custom SVG Icon System ═══════════════════════════════════════════════ */
+.ic {
+  display: inline-block;
+  vertical-align: -0.14em;
+  flex-shrink: 0;
+}
+.ic-sm  { width: 15px; height: 15px; }
+.ic-nav { width: 17px; height: 17px; }
+.ic-md  { width: 20px; height: 20px; }
+.ic-lg  { width: 24px; height: 24px; }
+.ic-xl  { width: 28px; height: 28px; }
+
+/* Logo icon in sidebar / topbar / boot */
+.boot-icon .ic-xl    { width: 40px; height: 40px; }
+.sidebar-logo-icon .ic-xl { width: 28px; height: 28px; }
+.topbar-brand .ic-xl { width: 24px; height: 24px; }
+.auth-mobile-brand .ic-xl { width: 36px; height: 36px; }
+.auth-brand-logo .ic-xl { width: 36px; height: 36px; }
+
+/* Nav links: icons inherit the link color */
+.nav-link .ic { opacity: 0.75; transition: opacity 0.15s; }
+.nav-link:hover .ic, .nav-link.active .ic { opacity: 1; }
+
+/* Stat card icons slightly dimmer */
+.stat-label .ic { opacity: 0.6; }
+
+/* Auth feature icons */
+.auth-feats li .ic { color: var(--accent); opacity: 1; flex-shrink: 0; }
+
+/* Card header icons */
+.card-header h3 .ic { opacity: 0.6; }

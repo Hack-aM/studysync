@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -13,6 +13,24 @@
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
+<!-- SVG Icon Sprite -->
+<svg aria-hidden="true" style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="ic-logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#8b5cf6"/><path d="M16 8L8 12v12h16V12z" fill="none" stroke="white" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 24v-7h8v7" fill="none" stroke="white" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 12l8-4 8 4" fill="none" stroke="white" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+<symbol id="ic-dashboard" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></symbol>
+<symbol id="ic-explore" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><path d="M13.5 6.5l-2.5 5-5 2.5 2.5-5z"/></symbol>
+<symbol id="ic-room" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18h14M5 18V8l5-4 5 4v10"/><rect x="8" y="12" width="4" height="6" rx="0.5"/></symbol>
+<symbol id="ic-messages" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M17 6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2v3l4-3h4a2 2 0 0 0 2-2V6z"/></symbol>
+<symbol id="ic-profile" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"><circle cx="10" cy="7" r="3.5"/><path d="M2 18a8 8 0 0 1 16 0"/></symbol>
+<symbol id="ic-settings" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/><circle cx="7" cy="5" r="2" fill="currentColor" stroke="none"/><circle cx="13" cy="10" r="2" fill="currentColor" stroke="none"/><circle cx="8" cy="15" r="2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="ic-flame" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2C9 5 12 8 10 11a4 4 0 0 1-4-4c-1 2-1 5 1 7a6 6 0 0 0 11 0c0-5-4-8-7-12z"/></symbol>
+<symbol id="ic-clock" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"><circle cx="10" cy="10" r="8"/><path d="M10 5.5V10l3.5 2"/></symbol>
+<symbol id="ic-target" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"><circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="4"/><circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="ic-users" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"><circle cx="8" cy="7" r="3"/><path d="M2 18a6 6 0 0 1 12 0"/><circle cx="15" cy="6" r="2.5"/><path d="M13.5 18a4.5 4.5 0 0 1 5 0"/></symbol>
+<symbol id="ic-zap" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2L3 12h8l-2 6 9-10h-8z"/></symbol>
+<symbol id="ic-eye" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"><path d="M1 10s4-7 9-7 9 7 9 7-4 7-9 7-9-7-9-7z"/><circle cx="10" cy="10" r="3"/></symbol>
+<symbol id="ic-book" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4a2 2 0 0 1 2-2h4v16H5a2 2 0 0 1-2-2V4z"/><path d="M9 2h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9V2z"/></symbol>
+<symbol id="ic-check" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l5 5 7-8"/></symbol>
+</svg>
 
 <!-- ═══════════════════════════════════════════
      BOOT SCREEN
@@ -20,7 +38,7 @@
 <div id="boot-screen" class="boot-screen">
   <div class="boot-content">
     <div class="boot-logo">
-      <span class="boot-icon">📚</span>
+      <span class="boot-icon"><svg class="ic ic-xl"><use href="#ic-logo"/></svg></span>
       <span class="boot-name">StudySync</span>
     </div>
     <p class="boot-tagline">Stop studying alone.</p>
@@ -36,25 +54,23 @@
 
     <!-- Left: Branding -->
     <div class="auth-brand">
-      <div class="auth-brand-logo">
-        <span>📚</span>
+      <div class="auth-brand-logo"><span><svg class="ic ic-xl"><use href="#ic-logo"/></svg></span>
         <strong>StudySync</strong>
       </div>
       <h1>Stop studying alone.</h1>
       <p>See what your friends are working on, drop into a study room, and actually get things done together.</p>
       <ul class="auth-feats">
-        <li>📚 Study rooms for any subject</li>
-        <li>💬 Group chat &amp; direct messages</li>
-        <li>👀 See who's online right now</li>
-        <li>🎯 Track your focus streak</li>
+        <li><svg class="ic ic-sm"><use href="#ic-book"/></svg> Study rooms for any subject</li>
+        <li><svg class="ic ic-sm"><use href="#ic-messages"/></svg> Group chat &amp; direct messages</li>
+        <li><svg class="ic ic-sm"><use href="#ic-eye"/></svg> See who's online right now</li>
+        <li><svg class="ic ic-sm"><use href="#ic-target"/></svg> Track your focus streak</li>
       </ul>
     </div>
 
     <!-- Right: Form -->
     <div class="auth-form-wrap">
       <!-- Mobile-only branding (hidden on desktop) -->
-      <div class="auth-mobile-brand">
-        <span>📚</span>
+      <div class="auth-mobile-brand"><span><svg class="ic ic-xl"><use href="#ic-logo"/></svg></span>
         <div>
           <strong>StudySync</strong>
           <p>Stop studying alone.</p>
@@ -115,19 +131,19 @@
   <aside class="sidebar">
     <div>
       <div class="sidebar-logo">
-        <span class="sidebar-logo-icon">📚</span>
+        <span class="sidebar-logo-icon"><svg class="ic ic-xl"><use href="#ic-logo"/></svg></span>
         <span class="sidebar-logo-name">StudySync</span>
       </div>
       <p class="sidebar-sub">Stop studying alone.</p>
     </div>
 
     <nav class="nav-stack">
-      <button class="nav-link active" data-page="dashboard">📊 Dashboard</button>
-      <button class="nav-link" data-page="explore">🔭 Explore</button>
-      <button class="nav-link" data-page="room">🏠 Study Room</button>
-      <button class="nav-link" data-page="messages">💬 Messages</button>
-      <button class="nav-link" data-page="profile">👤 Profile</button>
-      <button class="nav-link" data-page="settings">⚙️ Settings</button>
+      <button class="nav-link active" data-page="dashboard"><svg class="ic ic-nav"><use href="#ic-dashboard"/></svg> Dashboard</button>
+      <button class="nav-link" data-page="explore"><svg class="ic ic-nav"><use href="#ic-explore"/></svg> Explore</button>
+      <button class="nav-link" data-page="room"><svg class="ic ic-nav"><use href="#ic-room"/></svg> Study Room</button>
+      <button class="nav-link" data-page="messages"><svg class="ic ic-nav"><use href="#ic-messages"/></svg> Messages</button>
+      <button class="nav-link" data-page="profile"><svg class="ic ic-nav"><use href="#ic-profile"/></svg> Profile</button>
+      <button class="nav-link" data-page="settings"><svg class="ic ic-nav"><use href="#ic-settings"/></svg> Settings</button>
     </nav>
 
     <div class="sidebar-footer">
@@ -151,8 +167,7 @@
         <button class="hamburger" id="btn-hamburger" aria-label="Menu">
           <span></span><span></span><span></span>
         </button>
-        <div class="topbar-brand">
-          <span>📚</span>
+        <div class="topbar-brand"><span><svg class="ic ic-xl"><use href="#ic-logo"/></svg></span>
           <strong>StudySync</strong>
         </div>
       </div>
@@ -181,22 +196,22 @@
 
       <div class="stats-grid">
         <article class="stat-card">
-          <span class="stat-label">🔥 Day streak</span>
+          <span class="stat-label"><svg class="ic ic-sm"><use href="#ic-flame"/></svg> Day streak</span>
           <strong id="stat-streak">0 days</strong>
           <p>Don't break it today.</p>
         </article>
         <article class="stat-card">
-          <span class="stat-label">⏱️ Hours logged</span>
+          <span class="stat-label"><svg class="ic ic-sm"><use href="#ic-clock"/></svg> Hours logged</span>
           <strong id="stat-focus">0 min</strong>
           <p>Across all sessions.</p>
         </article>
         <article class="stat-card">
-          <span class="stat-label">🎯 Today's target</span>
+          <span class="stat-label"><svg class="ic ic-sm"><use href="#ic-target"/></svg> Today's target</span>
           <strong id="stat-goal">120 min</strong>
           <p>Change it in Settings.</p>
         </article>
         <article class="stat-card">
-          <span class="stat-label">👥 Rooms joined</span>
+          <span class="stat-label"><svg class="ic ic-sm"><use href="#ic-users"/></svg> Rooms joined</span>
           <strong id="stat-groups">0</strong>
           <p>Your study groups.</p>
         </article>
@@ -282,12 +297,12 @@
         <!-- Status col -->
         <div class="room-status-col">
           <article class="panel-card">
-            <div class="card-header"><h3>⚡ My Status</h3></div>
+            <div class="card-header"><h3><svg class="ic ic-sm"><use href="#ic-zap"/></svg> My Status</h3></div>
             <form class="form" id="form-status">
               <input name="statusText" id="status-text" placeholder="e.g. grinding DSA..." value="Around"/>
               <label class="toggle">
                 <input type="checkbox" name="focusMode" id="focus-mode"/>
-                <span>🎯 Focus mode — mute distractions</span>
+                <span><svg class="ic ic-sm"><use href="#ic-target"/></svg> Focus mode — mute distractions</span>
               </label>
               <button class="btn-primary" type="submit">Update</button>
             </form>
@@ -308,7 +323,7 @@
 
         <!-- Chat col -->
         <article class="panel-card tall">
-          <div class="card-header"><h3>💬 Chat</h3></div>
+          <div class="card-header"><h3><svg class="ic ic-sm"><use href="#ic-messages"/></svg> Chat</h3></div>
           <div class="message-list" id="group-messages">
             <p class="empty-state">No messages yet — say something.</p>
           </div>
@@ -321,7 +336,7 @@
 
         <!-- Members col -->
         <article class="panel-card tall">
-          <div class="card-header"><h3>👥 Members</h3></div>
+          <div class="card-header"><h3><svg class="ic ic-sm"><use href="#ic-users"/></svg> Members</h3></div>
           <div class="stack-list" id="room-members">
             <p class="empty-state">No one here yet.</p>
           </div>
