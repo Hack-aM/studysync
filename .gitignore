@@ -1,0 +1,8 @@
+node_modules
+dist
+.vercel
+.turbo
+.DS_Store
+coverage
+frontend/.env
+frontend/.env.local

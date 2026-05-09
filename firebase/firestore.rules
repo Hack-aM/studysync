@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isGroupMember(groupId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
+    }
+
+    function isThreadMember(threadId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/directThreads/$(threadId)/members/$(request.auth.uid));
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if isOwner(userId);
+      allow update, delete: if isOwner(userId);
+
+      match /memberships/{groupId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /notifications/{notificationId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /directThreads/{threadId} {
+        allow read, write: if isOwner(userId) || isThreadMember(threadId);
+      }
+    }
+
+    match /groups/{groupId} {
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow read: if signedIn()
+        && (!resource.data.isPrivate || isGroupMember(groupId) || resource.data.ownerId == request.auth.uid);
+      allow update, delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+
+      match /members/{memberId} {
+        allow read: if signedIn()
+          && (!get(/databases/$(database)/documents/groups/$(groupId)).data.isPrivate || isGroupMember(groupId));
+        allow create: if signedIn() && memberId == request.auth.uid;
+        allow delete: if signedIn() && memberId == request.auth.uid;
+      }
+
+      match /messages/{messageId} {
+        allow read, create: if isGroupMember(groupId);
+      }
+
+      match /statuses/{statusId} {
+        allow read: if isGroupMember(groupId);
+        allow create, update: if signedIn() && statusId == request.auth.uid && isGroupMember(groupId);
+      }
+    }
+
+    match /directThreads/{threadId} {
+      allow create: if signedIn();
+      allow read, update: if isThreadMember(threadId);
+
+      match /members/{memberId} {
+        allow read: if isThreadMember(threadId);
+        allow create: if signedIn();
+      }
+
+      match /messages/{messageId} {
+        allow read, create: if isThreadMember(threadId);
+      }
+    }
+  }
+}
