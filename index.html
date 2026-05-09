@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -217,7 +217,38 @@
         </article>
       </div>
 
-      <div class="content-grid">
+      <!-- ── Pomodoro Timer + Goal Progress ── -->
+      <div class="dash-bottom-grid">
+
+        <!-- Pomodoro Timer -->
+        <article class="panel-card pomodoro-card">
+          <div class="card-header"><h3>Focus Timer</h3><span class="badge" id="pomo-badge">Ready</span></div>
+          <div class="pomodoro-wrap">
+            <div class="pomo-tabs">
+              <button class="pomo-tab active" data-mins="25" id="tab-focus">Focus</button>
+              <button class="pomo-tab" data-mins="5"  id="tab-short">Short break</button>
+              <button class="pomo-tab" data-mins="15" id="tab-long">Long break</button>
+            </div>
+            <div class="pomo-ring-wrap">
+              <svg class="pomo-ring" viewBox="0 0 120 120">
+                <circle class="pomo-track" cx="60" cy="60" r="50"/>
+                <circle class="pomo-progress" id="pomo-circle" cx="60" cy="60" r="50"
+                  stroke-dasharray="314.16" stroke-dashoffset="0"/>
+              </svg>
+              <div class="pomo-center">
+                <div class="pomo-time" id="pomo-time">25:00</div>
+                <div class="pomo-label" id="pomo-label">Focus</div>
+              </div>
+            </div>
+            <div class="pomo-controls">
+              <button class="btn-primary pomo-btn" id="btn-pomo">Start</button>
+              <button class="btn-ghost" id="btn-pomo-reset">Reset</button>
+            </div>
+            <p class="pomo-sessions-label"><span id="pomo-sessions">0</span> sessions completed today</p>
+          </div>
+        </article>
+
+        <!-- Your Rooms -->
         <article class="panel-card dashboard-card">
           <div class="card-header">
             <h3>Your rooms</h3>
@@ -228,14 +259,17 @@
           </div>
         </article>
 
+        <!-- Recent Activity -->
         <article class="panel-card dashboard-card">
           <div class="card-header"><h3>Recent activity</h3></div>
           <div class="stack-list" id="dash-notifications">
             <p class="empty-state">Nothing yet. It'll show up here.</p>
           </div>
         </article>
+
       </div>
     </section>
+
 
     <!-- ─── PAGE: EXPLORE ─── -->
     <section class="panel page hidden" id="page-explore">

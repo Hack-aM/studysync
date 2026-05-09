@@ -139,13 +139,32 @@ function fillUI() {
   if($("p-interests"))   $("p-interests").value   = (profile.studyInterests||[]).join(", ");
   if($("p-bio"))         $("p-bio").value         = profile.bio||"";
   if($("s-goal"))        $("s-goal").value        = profile.dailyGoalMinutes||120;
-  txt("stat-streak",(profile.streakDays||0)+" days");
-  txt("stat-focus",(profile.totalFocusMinutes||0)+" min");
-  txt("stat-goal",(profile.dailyGoalMinutes||120)+" min");
-  txt("stat-groups",groups.length);
+
+  // Animated stat counters
+  const streak = profile.streakDays||0;
+  const focus  = profile.totalFocusMinutes||0;
+  const goal   = profile.dailyGoalMinutes||120;
+  if (window.animateStat) {
+    animateStat($("stat-streak"), streak, 800, " days");
+    animateStat($("stat-focus"),  focus,  1000, " min");
+    animateStat($("stat-goal"),   goal,   600, " min");
+    animateStat($("stat-groups"), groups.length, 500);
+  } else {
+    txt("stat-streak", streak+" days");
+    txt("stat-focus",  focus+" min");
+    txt("stat-goal",   goal+" min");
+    txt("stat-groups", groups.length);
+  }
+
   txt("profile-since",profile.createdAt?new Date(profile.createdAt).toLocaleDateString():"—");
   htm("profile-tags",(profile.studyInterests||[]).map(t=>`<span class="badge">${t}</span>`).join("")||"<p>None added yet.</p>");
+
+  // Expose user + db for pomodoro session saving
+  window._ssUser = user;
+  window.db = db;
+  window.fsModule = { doc, updateDoc, increment };
 }
+
 function renderRooms() {
   htm("dash-rooms",groups.length
     ?groups.map(g=>`<button class="list-card" data-action="open-room" data-gid="${g.id}"><span class="badge">${g.category}</span><strong>${g.name}</strong><p>${g.description}</p></button>`).join("")
@@ -520,3 +539,158 @@ document.addEventListener("submit", e => {
     setTimeout(() => btn.classList.remove("btn-send-flash"), 420);
   }
 }, true);
+
+// ══════════════════════════════════════════════════════════════════════════
+// POMODORO FOCUS TIMER
+// ══════════════════════════════════════════════════════════════════════════
+(function initPomodoro() {
+  const CIRCUMFERENCE = 314.16;
+  const MODES = { focus: 25, short: 5, long: 15 };
+
+  let totalSecs  = 25 * 60;
+  let remaining  = totalSecs;
+  let running    = false;
+  let interval   = null;
+  let sessions   = parseInt(localStorage.getItem("ss_pomo_sessions") || "0");
+  let mode       = "focus";
+
+  const display  = document.getElementById("pomo-time");
+  const label    = document.getElementById("pomo-label");
+  const circle   = document.getElementById("pomo-circle");
+  const btnStart = document.getElementById("btn-pomo");
+  const btnReset = document.getElementById("btn-pomo-reset");
+  const badge    = document.getElementById("pomo-badge");
+  const sessEl   = document.getElementById("pomo-sessions");
+  const tabs     = document.querySelectorAll(".pomo-tab");
+
+  function fmt(s) {
+    const m = Math.floor(s / 60), sec = s % 60;
+    return String(m).padStart(2,"0") + ":" + String(sec).padStart(2,"0");
+  }
+
+  function updateRing() {
+    const pct = remaining / totalSecs;
+    circle.style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
+  }
+
+  function render() {
+    if (!display) return;
+    display.textContent = fmt(remaining);
+    updateRing();
+  }
+
+  function setBadge(text, color) {
+    if (!badge) return;
+    badge.textContent = text;
+    badge.style.background = color || "";
+  }
+
+  function setMode(m) {
+    mode = m;
+    totalSecs = MODES[m] * 60;
+    remaining = totalSecs;
+    running = false;
+    clearInterval(interval);
+    if (btnStart) btnStart.textContent = "Start";
+    const isBreak = m !== "focus";
+    circle.classList.toggle("break", isBreak);
+    circle.classList.remove("running");
+    if (label) label.textContent = m === "focus" ? "Focus" : m === "short" ? "Short break" : "Long break";
+    setBadge("Ready");
+    render();
+  }
+
+  function tick() {
+    remaining--;
+    render();
+    if (remaining <= 0) {
+      clearInterval(interval);
+      running = false;
+      if (btnStart) btnStart.textContent = "Start";
+      circle.classList.remove("running");
+      if (mode === "focus") {
+        sessions++;
+        localStorage.setItem("ss_pomo_sessions", sessions);
+        if (sessEl) sessEl.textContent = sessions;
+        setBadge("Done! 🎉");
+        // Save focus minutes to Firestore if available
+        try {
+          const uid = window._ssUser?.uid;
+          if (uid && window.db) {
+            const { doc, updateDoc, increment } = window.fsModule;
+            updateDoc(doc(window.db, "users", uid), {
+              "stats.focusMinutes": increment(MODES[mode])
+            }).catch(()=>{});
+          }
+        } catch(e) {}
+      }
+      // Browser notification
+      if (Notification.permission === "granted") {
+        new Notification("StudySync ⏱", {
+          body: mode === "focus" ? "Focus session done! Take a break." : "Break over. Back to work!",
+          icon: "/favicon.ico"
+        });
+      }
+      // Auto-switch mode
+      setMode(mode === "focus" ? "short" : "focus");
+      setTimeout(() => setBadge("Ready"), 100);
+    }
+  }
+
+  function toggle() {
+    if (!running) {
+      running = true;
+      btnStart.textContent = "Pause";
+      circle.classList.add("running");
+      setBadge("Running");
+      Notification.requestPermission();
+      interval = setInterval(tick, 1000);
+    } else {
+      running = false;
+      clearInterval(interval);
+      btnStart.textContent = "Resume";
+      circle.classList.remove("running");
+      setBadge("Paused");
+    }
+  }
+
+  // Init sessions count
+  if (sessEl) sessEl.textContent = sessions;
+
+  // Tab switching
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      tabs.forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      const mins = parseInt(tab.dataset.mins);
+      const modeKey = mins === 25 ? "focus" : mins === 5 ? "short" : "long";
+      setMode(modeKey);
+    });
+  });
+
+  if (btnStart) btnStart.addEventListener("click", toggle);
+  if (btnReset) btnReset.addEventListener("click", () => setMode(mode));
+
+  render();
+})();
+
+// ══════════════════════════════════════════════════════════════════════════
+// ANIMATED STAT COUNTERS
+// ══════════════════════════════════════════════════════════════════════════
+function animateCount(el, target, duration = 900, suffix = "") {
+  if (!el) return;
+  const start = performance.now();
+  const from = 0;
+  el.classList.add("counting");
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3); // ease-out cubic
+    el.textContent = Math.round(from + (target - from) * ease) + suffix;
+    if (t < 1) requestAnimationFrame(step);
+    else { el.textContent = target + suffix; el.classList.remove("counting"); }
+  }
+  requestAnimationFrame(step);
+}
+
+// Expose for app.js to call when filling stats
+window.animateStat = animateCount;

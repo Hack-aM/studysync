@@ -759,3 +759,65 @@ svg.ic-xl  { width: 28px !important; height: 28px !important; flex-shrink: 0; }
 
 /* Card headers: keep icon tiny */
 .card-header h3 { display: flex; align-items: center; gap: 0.4rem; }
+
+/* ══ Dashboard bottom grid (3 cols) ═══════════════════════════════════ */
+.dash-bottom-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 1200px) { .dash-bottom-grid { grid-template-columns: 280px 1fr; } }
+@media (max-width: 900px)  { .dash-bottom-grid { grid-template-columns: 1fr; } }
+
+/* ══ Pomodoro Timer ════════════════════════════════════════════════════ */
+.pomodoro-card { min-height: 0; }
+.pomodoro-wrap { padding: 1.25rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+
+.pomo-tabs {
+  display: flex; gap: 0.25rem;
+  background: var(--bg-raised); border-radius: var(--r-full);
+  padding: 3px; width: 100%;
+}
+.pomo-tab {
+  flex: 1; padding: 0.35rem 0.5rem; border: none; border-radius: var(--r-full);
+  background: none; color: var(--text-muted); font-size: 0.72rem; font-weight: 500;
+  font-family: var(--font); cursor: pointer; transition: all 0.2s ease;
+}
+.pomo-tab.active { background: var(--bg-card); color: var(--accent); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+.pomo-tab:hover:not(.active) { color: var(--text-secondary); }
+
+.pomo-ring-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+.pomo-ring { width: 160px; height: 160px; transform: rotate(-90deg); }
+.pomo-track { fill: none; stroke: var(--bg-raised); stroke-width: 8; }
+.pomo-progress {
+  fill: none; stroke: var(--accent); stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear, stroke 0.4s ease;
+  filter: drop-shadow(0 0 6px rgba(139,92,246,0.5));
+}
+.pomo-progress.break { stroke: var(--success); filter: drop-shadow(0 0 6px rgba(16,185,129,0.5)); }
+
+.pomo-center {
+  position: absolute; text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+}
+.pomo-time {
+  font-family: 'Space Grotesk', var(--font);
+  font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1;
+  color: var(--text-primary);
+}
+.pomo-label { font-size: 0.68rem; color: var(--text-muted); margin-top: 0.2rem; text-transform: uppercase; letter-spacing: 0.1em; }
+
+.pomo-controls { display: flex; gap: 0.5rem; width: 100%; }
+.pomo-controls .btn-primary { flex: 1; }
+.pomo-sessions-label { font-size: 0.78rem; color: var(--text-muted); }
+.pomo-sessions-label span { color: var(--accent); font-weight: 600; }
+
+/* ══ Pulsing ring when running ══════════════════════════════════════════ */
+@keyframes ringPulse { 0%,100%{filter:drop-shadow(0 0 6px rgba(139,92,246,0.5))} 50%{filter:drop-shadow(0 0 14px rgba(139,92,246,0.9))} }
+.pomo-progress.running { animation: ringPulse 2s ease-in-out infinite; }
+
+/* ══ Stat counter animation ═════════════════════════════════════════════ */
+@keyframes countUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+.stat-card strong.counting { animation: countUp 0.4s ease; }
