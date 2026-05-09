@@ -510,3 +510,13 @@ const presenceCountEl = document.getElementById("presence-count");
 if (presenceCountEl && presenceCountEl.textContent === "0") {
   presenceCountEl.textContent = "—";
 }
+
+// ── M7: Message send visual feedback ─────────────────────────────────────
+document.addEventListener("submit", e => {
+  if (e.target.id === "form-group-msg" || e.target.id === "form-dm") {
+    const btn = e.target.querySelector("button[type=submit]");
+    if (!btn) return;
+    btn.classList.add("btn-send-flash");
+    setTimeout(() => btn.classList.remove("btn-send-flash"), 420);
+  }
+}, true);

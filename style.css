@@ -122,14 +122,15 @@ p  { color:var(--text-secondary); font-size:0.9rem; }
   color:#fca5a5; padding:0.4rem 1rem; border-radius:var(--r-full);
   font-size:0.8rem; animation:fadeIn 0.3s ease;
 }
-.panel { padding:2rem; max-width:1200px; }
+.panel { padding:2rem; max-width:1200px; margin:0 auto; width:100%; }
+.panel.page { min-height: calc(100vh - 64px); }
 .panel-heading { margin-bottom:1.5rem; display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; }
 .section-copy { color:var(--text-secondary); font-size:0.875rem; margin-top:0.5rem; }
 
 /* ── Grids ── */
 .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
-.content-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-.room-grid { display:grid; grid-template-columns:280px 1fr 260px; gap:1rem; }
+.content-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; align-items:start; }
+.room-grid { display:grid; grid-template-columns:260px 1fr 240px; gap:1rem; align-items:start; }
 
 /* ── Stat Card ── */
 .stat-card {
@@ -150,7 +151,7 @@ p  { color:var(--text-secondary); font-size:0.9rem; }
   background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg);
   overflow:hidden; box-shadow:var(--shadow); display:flex; flex-direction:column;
 }
-.panel-card.tall { min-height:500px; }
+.panel-card.tall { height:72vh; min-height:420px; max-height:900px; }
 .card-header {
   display:flex; align-items:center; justify-content:space-between;
   padding:1rem 1.5rem; border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02);
@@ -266,7 +267,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
   min-height:100vh;
   display:flex;
   align-items:stretch;
-  background:var(--bg-base);
+  background: radial-gradient(ellipse at 30% 60%, rgba(139,92,246,0.14) 0%, transparent 65%), var(--bg-base);
 }
 
 /* ── Page transitions ── */
@@ -302,7 +303,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .topbar-brand { display: none; align-items: center; gap: 0.5rem; }
 .topbar-brand span { font-size: 1.2rem; }
 .topbar-brand strong { font-family: 'Space Grotesk', var(--font); font-size: 1rem; font-weight: 700; }
-.topbar-left { display: flex; align-items: center; gap: 0.75rem; }
+/* topbar-left shown only on mobile — see @media (max-width:768px) */
 
 /* Sidebar overlay */
 .sidebar-overlay {
@@ -320,62 +321,69 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .notif-body p { font-size:.75rem; }
 .notif-body .meta { margin-top:.25rem; }
 
-/* ════════════════════════════════
-   RESPONSIVE BREAKPOINTS
-════════════════════════════════ */
+/* ════════════════════════════════════════════
+   RESPONSIVE — 5 breakpoints
+   1440+ : Wide desktop
+   1024-1440 : Laptop
+   768-1024  : Tablet landscape
+   480-768   : Mobile / Tablet portrait
+   <480      : Small phone
+════════════════════════════════════════════ */
 
-/* ── 1280px — Large tablets / small laptops ── */
+/* ── 1280px — Laptop: hide members column ── */
 @media (max-width: 1280px) {
-  .room-grid { grid-template-columns: 260px 1fr; }
+  .room-grid { grid-template-columns: 240px 1fr; }
   .room-grid .panel-card:last-child { display: none; }
-  .stats-grid { gap: 0.75rem; }
 }
 
-/* ── 1024px — Tablets landscape ── */
+/* ── 1024px — Tablet landscape ── */
 @media (max-width: 1024px) {
-  :root { --sidebar-w: 200px; }
+  :root { --sidebar-w: 210px; }
   .panel { padding: 1.5rem; }
   .auth-brand { padding: 3rem 2rem; }
   .auth-brand h1 { font-size: 2rem; }
   .stat-card strong { font-size: 1.5rem; }
+  .room-grid { grid-template-columns: 220px 1fr; }
+  .stats-grid { gap: 0.75rem; }
 }
 
-/* ── 900px — Tablets portrait ── */
+/* ── 900px — Tablet portrait: full single column ── */
 @media (max-width: 900px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .content-grid { grid-template-columns: 1fr; }
   .room-grid { grid-template-columns: 1fr; }
-  .panel-card.tall { min-height: 420px; }
-  .room-grid > div { order: 2; }
-  .room-grid > article.tall { order: 1; }
+  .panel-card.tall { height: 60vh; min-height: 360px; }
+  /* Chat first, then status on mobile */
+  .room-grid > div    { order: 2; }
+  .room-grid > .tall  { order: 1; }
 }
 
-/* ── 768px — Mobile landscape / large phones ── */
+/* ── 768px — Mobile: sidebar becomes drawer ── */
 @media (max-width: 768px) {
   :root { --sidebar-w: 260px; }
 
-  /* Show hamburger + brand in topbar */
+  /* Topbar: show hamburger + brand */
   .topbar { justify-content: space-between; padding: 0 1rem; }
-  .topbar-left { display: flex; }
+  .topbar-left { display: flex; align-items: center; gap: 0.5rem; }
   .hamburger { display: flex; }
   .topbar-brand { display: flex; }
   .topbar-info { display: none; }
 
-  /* Sidebar becomes a drawer */
+  /* Sidebar drawer */
   .sidebar {
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 100;
     box-shadow: var(--shadow-lg);
   }
   .sidebar.open { transform: translateX(0); }
 
-  /* Main takes full width */
+  /* Main fills full width */
   .app-shell { grid-template-columns: 1fr; }
   .main-shell { margin-left: 0; }
 
-  /* Panel */
+  /* Panels */
   .panel { padding: 1rem; }
+  .panel.page { min-height: calc(100vh - 56px); }
   .panel-heading { flex-direction: column; gap: 0.5rem; }
 
   /* Stats 2-col */
@@ -383,29 +391,28 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
   .stat-card { padding: 1rem; }
   .stat-card strong { font-size: 1.4rem; }
 
-  /* Content grid 1-col */
+  /* Grids */
   .content-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+  .room-grid    { grid-template-columns: 1fr; gap: 0.75rem; }
+  .panel-card.tall { height: 55vh; min-height: 320px; }
 
-  /* Room page stacks fully */
-  .room-grid { grid-template-columns: 1fr; gap: 0.75rem; }
-  .panel-card.tall { min-height: 380px; }
-
-  /* Chat composer */
-  .composer { padding: 0.75rem; gap: 0.5rem; }
+  /* Chat */
+  .composer     { padding: 0.75rem 1rem; gap: 0.5rem; }
   .message-list { padding: 0.75rem 1rem; }
 
-  /* Auth */
-  .auth-split { grid-template-columns: 1fr; }
-  .auth-brand { display: none; }
-  .auth-form-wrap { padding: 2rem 1.5rem; min-height: 100vh; align-items: flex-start; padding-top: 3rem; }
-
   /* Cards */
-  .card-header { padding: 0.875rem 1rem; }
-  .stack-list { padding: 0.75rem; }
-  .list-card { padding: 0.75rem; }
+  .card-header  { padding: 0.875rem 1rem; }
+  .stack-list   { padding: 0.75rem; }
+  .list-card    { padding: 0.75rem; }
+  .dashboard-card { min-height: 220px; }
 
-  /* Room selector full-width */
-  .room-select { max-width: 100%; width: 100%; }
+  /* Room selector */
+  .room-select  { max-width: 100%; width: 100%; }
+
+  /* Auth */
+  .auth-split      { grid-template-columns: 1fr; }
+  .auth-brand      { display: none; }
+  .auth-form-wrap  { padding: 2.5rem 1.5rem; min-height: 100vh; align-items: flex-start; }
 }
 
 /* ── 480px — Small phones ── */
@@ -413,56 +420,48 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
   h1 { font-size: 1.75rem; }
   h2 { font-size: 1.25rem; }
 
-  /* Stats go 1-col on very small screens */
-  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
-  .stat-card { padding: 0.875rem; }
-  .stat-card strong { font-size: 1.25rem; }
-  .stat-card p { display: none; }
-
-  /* Panel */
   .panel { padding: 0.75rem; }
-  .panel-heading { margin-bottom: 1rem; }
+  .panel-heading { margin-bottom: 0.875rem; }
 
-  /* Auth */
-  .auth-form-wrap { padding: 1.5rem 1.25rem; padding-top: 2rem; }
-  .auth-form h2 { font-size: 1.5rem; }
-  .auth-submit { padding: 0.875rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+  .stat-card  { padding: 0.875rem; }
+  .stat-card strong { font-size: 1.2rem; }
+  .stat-card p { font-size: 0.72rem; }
 
-  /* Sidebar tighter */
-  :root { --sidebar-w: 100vw; }
-  .sidebar { width: 85vw; }
-
-  /* Topbar */
   .topbar { height: 56px; }
-  .topbar-brand strong { font-size: 0.9rem; }
+  .sidebar { width: 85vw; max-width: 280px; }
 
-  /* Messages */
-  .msg-bubble { max-width: calc(100vw - 100px); }
-  .message-list { padding: 0.75rem; gap: 0.5rem; }
-
-  /* Presence strip */
-  .presence-strip { margin: 0 0.75rem 0.75rem; padding: 0.5rem 0.75rem; }
-
-  /* Buttons */
-  .btn-primary { padding: 0.625rem 1rem; font-size: 0.825rem; }
-  .btn-ghost   { padding: 0.5rem 0.75rem; font-size: 0.75rem; }
-
-  /* Forms */
-  .form { padding: 1rem; gap: 0.625rem; }
+  .msg-bubble { max-width: calc(100vw - 96px); }
+  .message-list { padding: 0.625rem; }
   .composer { padding: 0.625rem; }
   .composer textarea { font-size: 0.875rem; }
 
-  /* Panel card headers */
-  .card-header { padding: 0.75rem; }
+  .presence-strip { margin: 0 0.75rem 0.75rem; padding: 0.5rem 0.75rem; }
+
+  .form { padding: 1rem; gap: 0.625rem; }
   .card-header h3 { font-size: 0.8rem; }
+
+  .auth-form-wrap { padding: 2rem 1.25rem; }
+  .auth-form h2  { font-size: 1.4rem; }
+  .auth-submit   { padding: 0.875rem; }
+
+  .btn-primary { padding: 0.625rem 1rem; font-size: 0.825rem; }
+  .btn-ghost   { padding: 0.45rem 0.75rem; font-size: 0.75rem; }
+
+  .profile-info { padding: 1rem; }
+  .avatar-xl    { width: 56px; height: 56px; font-size: 1.1rem; }
+
+  .toast { bottom: 1rem; right: 1rem; left: 1rem; max-width: none; }
 }
 
-/* ── 360px — Minimum viable width ── */
+/* ── 360px — Minimum safe width ── */
 @media (max-width: 360px) {
-  .stats-grid { grid-template-columns: 1fr 1fr; }
-  .panel { padding: 0.625rem; }
-  .auth-form-wrap { padding: 1.25rem 1rem; }
+  .panel { padding: 0.5rem; }
+  .auth-form-wrap { padding: 1.5rem 1rem; }
+  .stats-grid { gap: 0.375rem; }
+  .stat-card { padding: 0.75rem; }
 }
+
 
 
 
@@ -576,7 +575,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .dashboard-card { min-height: 280px; }
 
 /* ── Messages left column ── */
-.messages-left { display: flex; flex-direction: column; gap: 0; }
+.messages-left { display: flex; flex-direction: column; gap: 0.75rem; }
 
 /* ── Profile info section ── */
 .profile-info { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
@@ -597,8 +596,7 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
   font-size: 0.8rem; color: var(--text-muted); pointer-events: none;
 }
 
-/* ── Panel centering ── */
-.panel { padding: 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+/* panel base defined at top — no override needed */
 
 /* ── Toast notification ── */
 .toast {
@@ -643,4 +641,60 @@ select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns=
 @media (max-width: 480px) {
   .panel { padding: 0.75rem; }
   .avatar-xl { width: 56px; height: 56px; font-size: 1.1rem; }
+}
+
+/* ── Room status column (H4 + H5) ── */
+.room-status-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.room-status-col .panel-card:last-child {
+  flex: 1;
+  min-height: 160px;
+  overflow: hidden;
+}
+
+/* ── Explore equal card heights (H3) ── */
+#page-explore .content-grid { align-items: stretch; }
+#page-explore .panel-card   { min-height: 320px; }
+
+/* ── content-grid default back to stretch ── */
+.content-grid { align-items: stretch; }
+
+/* ── Mobile auth branding (M2) ── */
+.auth-mobile-brand {
+  display: none;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 0 1.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+  width: 100%;
+}
+.auth-mobile-brand span { font-size: 2rem; }
+.auth-mobile-brand strong {
+  font-family: 'Space Grotesk', var(--font);
+  font-size: 1.25rem; font-weight: 700; display: block;
+}
+.auth-mobile-brand p { font-size: 0.8rem; color: var(--text-muted); margin:0; }
+
+/* ── Boot screen safe padding (L1) ── */
+.boot-screen { padding: 2rem; }
+
+/* ── Scrollbar only show when needed (L10) ── */
+::-webkit-scrollbar-track { background: transparent; }
+.stack-list:hover::-webkit-scrollbar-track { background: var(--bg-surface); }
+
+/* ── Message send feedback (M7) ── */
+@keyframes sendFlash {
+  0%   { background: var(--success); }
+  100% { background: var(--accent); }
+}
+.btn-send-flash { animation: sendFlash 0.4s ease; }
+
+/* ── Show mobile auth brand on mobile ── */
+@media (max-width: 768px) {
+  .auth-mobile-brand { display: flex; }
+  .auth-form-wrap { justify-content: flex-start; padding-top: 2rem; }
 }
